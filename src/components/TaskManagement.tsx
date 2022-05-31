@@ -119,12 +119,12 @@ const TaskManagement:React.FC=()=>{
         const t = task;
         t.name=taskName;
         const response = await TaskService.update(t);
+        stopSpin();
+        setUseEffectRun(!useEffectRun);
       } catch (error) {
         console.log(error);
       }
     })();
-    stopSpin();
-        setUseEffectRun(!useEffectRun);
   closeDialog();
   }
 
@@ -134,12 +134,12 @@ const TaskManagement:React.FC=()=>{
     (async()=>{
       try {
         const response = await TaskService.remove(task.id==undefined?0:task.id);
+        stopSpin();
+        setUseEffectRun(!useEffectRun);
       } catch (error) {
         console.log(error);
       }
     })();
-    stopSpin();
-        setUseEffectRun(!useEffectRun);
   closeDialog();
   }
     return(
