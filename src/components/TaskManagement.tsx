@@ -8,16 +8,12 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { Button, Grid, Typography } from '@mui/material';
 import Crop32Icon from '@mui/icons-material/Crop32';
 import NewTask from './NewTask';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import { styled } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
-import TextField from '@mui/material/TextField';
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 import TaskService from '../service/Taskservice';
 import Task from '../types/Task';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 const useStyles = makeStyles({
   root: {
@@ -52,14 +48,19 @@ const TaskManagement:React.FC=()=>{
     const [open, setOpen] = React.useState(false);
     const [spin, setSpin] = React.useState(false);
     const[taskList,setTaskList] = React.useState<Task[]>([]);
-    const [taskListView,setTaskListView] = React.useState<any[]>([]);
     const [taskName,setTaskName]=React.useState('');
     const [useEffectRun,setUseEffectRun]=React.useState(false);
     const [editmode,setEditmode]=React.useState(false);
+    const [task,setTask]= React.useState<Task>({name:''});
     const classes = useStyles();
     const showDialog =()=>{
       setOpen(true);
       
+    }
+    const showNewTaskDialog = ()=>{
+      setEditmode(false);
+      setTaskName('');
+      showDialog();
     }
     const createNewTask=()=>{
       closeDialog();
@@ -107,68 +108,97 @@ const TaskManagement:React.FC=()=>{
       console.log(task);
       setEditmode(true);
       setTaskName(task.name);
+      setTask(task);
       showDialog();
    }
   const updateTask=()=>{
+    closeDialog();
+    handleSpin();
+    (async()=>{
+      try {
+        const t = task;
+        t.name=taskName;
+        const response = await TaskService.update(t);
+      } catch (error) {
+        console.log(error);
+      }
+    })();
+    stopSpin();
+        setUseEffectRun(!useEffectRun);
+  closeDialog();
+  }
+
+  const deleteTask=()=>{
+    closeDialog();
+    handleSpin();
+    (async()=>{
+      try {
+        const response = await TaskService.remove(task.id==undefined?0:task.id);
+      } catch (error) {
+        console.log(error);
+      }
+    })();
+    stopSpin();
+        setUseEffectRun(!useEffectRun);
   closeDialog();
   }
     return(
      <>
         <Card className={classes.root}>
-            <CardHeader
-            title="Tasker"
-            action={
-              <Button variant="outlined" onClick={showDialog}>New
-              </Button>}
-            />
-            <CardContent >
-              <Grid container
-              spacing={2}
-              >
-    {taskList.map((task,index)=>{
-       return (<Grid item xs={12} key={index}>
-         <Card>
-              <CardHeader
-              action={
-                  <IconButton aria-label="edit" onClick={(e)=>editTask(e,task)}>
-                    <Crop32Icon  className={classes.iconStyle} />
-                  </IconButton>
-                }
-              title={task.name}
-              subheader={<IconButton disableRipple className={classes.dateContent} size="small"><CalendarTodayIcon/>&nbsp;{task.created}</IconButton>}
-              /></Card>
-              </Grid>)
-    })}</Grid>
-            </CardContent>
-      </Card>
+                <CardHeader
+                      title="Tasker"
+                      action={
+                        <Button variant="outlined" onClick={showNewTaskDialog}>New
+                        </Button>}
+                />
+                <CardContent >
+                    <Grid container
+                        spacing={2}
+                      >
+                          {taskList.map((task,index)=>{
+                            return (<Grid item xs={12} key={index}>
+                                      <Card>
+                                            <CardHeader
+                                                  action={
+                                                      <IconButton aria-label="edit" onClick={(e)=>editTask(e,task)}>
+                                                        <Crop32Icon  className={classes.iconStyle} />
+                                                      </IconButton>
+                                                    }
+                                                  title={task.name}
+                                                  subheader={<IconButton disableRipple className={classes.dateContent} size="small"><CalendarTodayIcon/>&nbsp;{task.created}</IconButton>}
+                                            />
+                                        </Card>
+                                      </Grid>)
+                          })}
+                    </Grid>
+                </CardContent>
+        </Card>
 
-      <BootstrapDialog
-        onClose={closeDialog}
-        aria-labelledby="customized-dialog-title"
-        open={open}
-      >
-      <NewTask id="customized-dialog-title" onClose={closeDialog}>
-          New Task
+        <BootstrapDialog
+          onClose={closeDialog}
+          aria-labelledby="customized-dialog-title"
+          open={open}
+        >
+        <NewTask id="customized-dialog-title" 
+            onClose={closeDialog}
+            onChangeName={onChangeName}
+            taskName={taskName}
+            editmode={editmode}
+            updateTask={updateTask}
+            createNewTask={createNewTask}
+            deleteTask={deleteTask}
+        >
+          {editmode ?'Edit Task':'New Task'}
         </NewTask>
-        <DialogContent dividers>
-        <TextField id="outlined-basic" label="Name" variant="outlined" onChange={onChangeName} value={taskName}/>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={editmode?updateTask:createNewTask}>
-            {editmode?"Update":"Create"}
-          </Button>
-         { editmode?(<Button autoFocus >
-            Delete
-         </Button>):""}
-        </DialogActions>
-      </BootstrapDialog>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={spin}
-       onClick={stopSpin}
-      >
+       
+        </BootstrapDialog>
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={spin}
+        onClick={stopSpin}
+        >
         <CircularProgress color="inherit" />
-      </Backdrop>
+        </Backdrop>
         </>
     );
 }

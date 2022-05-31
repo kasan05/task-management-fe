@@ -10,6 +10,14 @@ const create =(task:Task)=>{
     return RestTemplate.post<Task>("/task",task);
 }
 
-const TaskService = {getAll,create};
+const update =(task:Task)=>{
+    return RestTemplate.put<Task>("/task",task);
+}
+
+const remove =(id:number)=>{
+    return  RestTemplate.delete<number>("/task/"+id);
+}
+
+const TaskService = {getAll,create,update,remove};
 
 export default TaskService;
